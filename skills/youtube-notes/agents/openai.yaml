@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Notes"
+  short_description: "Captions and briefs from YouTube URLs"
+  default_prompt: "Use $youtube-notes to pull captions from this YouTube URL and write a short brief."

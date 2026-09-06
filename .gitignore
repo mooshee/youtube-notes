@@ -1,0 +1,6 @@
+# operator secrets / 1Password SA
+.local/
+AGENTS.md
+__pycache__/
+*.pyc
+.DS_Store

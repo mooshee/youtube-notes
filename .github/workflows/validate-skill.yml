@@ -1,0 +1,42 @@
+name: Validate public skill
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate skill package layout
+        shell: bash
+        run: |
+          test ! -f SKILL.md
+          test -f skills/youtube-notes/SKILL.md
+          test -f skills/youtube-notes/agents/openai.yaml
+          test -x skills/youtube-notes/scripts/fetch_captions.py
+          grep -q '^name: youtube-notes$' skills/youtube-notes/SKILL.md
+          grep -q '\$youtube-notes' skills/youtube-notes/agents/openai.yaml
+
+      - name: Compile and unit-test the caption parser
+        shell: bash
+        run: |
+          python3 -m py_compile skills/youtube-notes/scripts/fetch_captions.py
+          python3 skills/youtube-notes/scripts/test_parse_captions.py

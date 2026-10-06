@@ -1,6 +1,6 @@
 ---
 name: youtube-notes
-description: Use when the user pastes a YouTube URL and wants captions, a transcript, notes, a digest, takeaways, quotes, or a watch/skip verdict. Also /youtube-notes. Do not use to download the video file, transcribe a local recording, or publish to YouTube.
+description: "Get a YouTube transcript, notes, digest or takeaways when the user asks to read a video."
 ---
 
 # YouTube Notes

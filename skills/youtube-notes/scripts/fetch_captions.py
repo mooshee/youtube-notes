@@ -12,9 +12,21 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+
+_TOOL_ROOT = Path(__file__).resolve().parents[3]
+_RUST_BIN = _TOOL_ROOT / "rust" / "target" / "release" / "fetch-captions"
+if not _RUST_BIN.exists():
+    _RUST_BIN = _TOOL_ROOT / "rust" / "target" / "debug" / "fetch-captions"
+if not _RUST_BIN.exists() and shutil.which("fetch-captions"):
+    _RUST_BIN = Path(shutil.which("fetch-captions"))
+if _RUST_BIN.exists():
+    res = subprocess.run([str(_RUST_BIN)] + sys.argv[1:])
+    sys.exit(res.returncode)
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET

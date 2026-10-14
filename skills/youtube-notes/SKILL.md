@@ -12,11 +12,11 @@ Pull captions from a YouTube URL, save a timestamped transcript, and write a sho
 Resolve `<skill-dir>` as the directory that contains this `SKILL.md`. Then run:
 
 ```bash
-python3 <skill-dir>/scripts/fetch_captions.py "https://www.youtube.com/watch?v=VIDEO_ID" \
+<skill-dir>/scripts/fetch-captions "https://www.youtube.com/watch?v=VIDEO_ID" \
   --dir youtube-notes/VIDEO_ID
 ```
 
-The script uses Python 3 stdlib only. It talks to YouTube's player API, reads timedtext XML, and joins nested word spans used by current auto-captions. Optional `yt-dlp` on PATH fills richer metadata. Do not re-download some other caption script.
+The compiled native Rust CLI talks to YouTube's player API, reads timedtext XML, and joins nested word spans used by current auto-captions. Optional `yt-dlp` on PATH fills richer metadata. Do not re-download some other caption script.
 
 `--dir` writes:
 

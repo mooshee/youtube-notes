@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Author: Daniel Hallman
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+if [[ -x "$ROOT_DIR/rust/target/release/fetch-captions" ]]; then
+  exec "$ROOT_DIR/rust/target/release/fetch-captions" "$@"
+fi
+
+if [[ -f "$ROOT_DIR/rust/Cargo.toml" ]]; then
+  exec cargo run --release --quiet --manifest-path "$ROOT_DIR/rust/Cargo.toml" --bin fetch-captions -- "$@"
+fi
+
+if [[ -x "${HOME:-}/.local/bin/fetch-captions" ]]; then
+  exec "${HOME}/.local/bin/fetch-captions" "$@"
+fi
+
+echo "fetch-captions binary not found; build from the repository with: cargo build --release --manifest-path rust/Cargo.toml" >&2
+exit 69

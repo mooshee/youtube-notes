@@ -1,15 +1,16 @@
 // Author: Daniel Hallman
 
 use clap::Parser;
-use fetch_captions::{
-    fetch_captions, plain_lines, timed_lines, CaptionPayload,
-};
+use fetch_captions::{CaptionPayload, fetch_captions, plain_lines, timed_lines};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 #[derive(Parser, Debug)]
-#[command(name = "fetch-captions", about = "Fetch YouTube captions as JSON or text files")]
+#[command(
+    name = "fetch-captions",
+    about = "Fetch YouTube captions as JSON or text files"
+)]
 struct Args {
     /// YouTube URL or 11-character video id
     url: String,

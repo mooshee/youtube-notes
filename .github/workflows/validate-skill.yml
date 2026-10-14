@@ -20,10 +20,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Validate skill package layout
         shell: bash
@@ -31,12 +29,13 @@ jobs:
           test ! -f SKILL.md
           test -f skills/youtube-notes/SKILL.md
           test -f skills/youtube-notes/agents/openai.yaml
-          test -x skills/youtube-notes/scripts/fetch_captions.py
+          test -x skills/youtube-notes/scripts/fetch-captions
+          bash -n skills/youtube-notes/scripts/fetch-captions
           grep -q '^name: youtube-notes$' skills/youtube-notes/SKILL.md
           grep -q '\$youtube-notes' skills/youtube-notes/agents/openai.yaml
 
       - name: Compile and unit-test the caption parser
         shell: bash
         run: |
-          python3 -m py_compile skills/youtube-notes/scripts/fetch_captions.py
-          python3 skills/youtube-notes/scripts/test_parse_captions.py
+          cargo test --manifest-path rust/Cargo.toml --all-targets
+          ./skills/youtube-notes/scripts/fetch-captions --help > /dev/null

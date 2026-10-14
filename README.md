@@ -25,12 +25,12 @@ Use $youtube-notes to pull captions from this YouTube URL and write a short brie
 From a repository checkout:
 
 ```bash
-python3 skills/youtube-notes/scripts/fetch_captions.py \
+./skills/youtube-notes/scripts/fetch-captions \
   "https://www.youtube.com/watch?v=VIDEO_ID" \
   --dir /tmp/VIDEO_ID
 ```
 
-That writes `transcript.json`, `transcript-timed.txt`, and `transcript.txt`. Python 3.8+ is enough. `yt-dlp` on PATH is optional and only used for richer metadata.
+That writes `transcript.json`, `transcript-timed.txt`, and `transcript.txt` using the native Rust `fetch-captions` CLI (`rust/`). `yt-dlp` on PATH is optional and only used for richer metadata.
 
 Ask for the transcript alone when you want the files and nothing else.
 

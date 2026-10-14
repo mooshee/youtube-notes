@@ -12,9 +12,8 @@ static VIDEO_ID_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?:v=|/v/|youtu\.be/|embed/|shorts/)([A-Za-z0-9_-]{11})").unwrap()
 });
 
-static API_KEY_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#""INNERTUBE_API_KEY":\s*"([A-Za-z0-9_-]+)""#).unwrap()
-});
+static API_KEY_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#""INNERTUBE_API_KEY":\s*"([A-Za-z0-9_-]+)""#).unwrap());
 
 pub const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
@@ -54,7 +53,11 @@ pub struct CaptionPayload {
 
 pub fn parse_video_id(url_or_id: &str) -> Result<String, String> {
     let text = url_or_id.trim();
-    if text.len() == 11 && text.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+    if text.len() == 11
+        && text
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    {
         return Ok(text.to_string());
     }
     if let Some(caps) = VIDEO_ID_RE.captures(text) {
@@ -62,7 +65,9 @@ pub fn parse_video_id(url_or_id: &str) -> Result<String, String> {
             return Ok(m.as_str().to_string());
         }
     }
-    Err(format!("Could not read a YouTube video id from: {url_or_id}"))
+    Err(format!(
+        "Could not read a YouTube video id from: {url_or_id}"
+    ))
 }
 
 pub fn format_timestamp(seconds: f64) -> String {
@@ -159,7 +164,9 @@ pub fn parse_timedtext(xml_text: &str) -> Vec<Segment> {
                 if name.as_ref() == b"p" {
                     in_p = false;
                     if let Some(t) = current_p_t {
-                        let text = html_escape::decode_html_entities(&current_p_text).trim().to_string();
+                        let text = html_escape::decode_html_entities(&current_p_text)
+                            .trim()
+                            .to_string();
                         if !text.is_empty() {
                             let dur = current_p_d.unwrap_or(0.0);
                             segments.push(Segment {
@@ -171,7 +178,9 @@ pub fn parse_timedtext(xml_text: &str) -> Vec<Segment> {
                     }
                 } else if name.as_ref() == b"text" {
                     in_text = false;
-                    let text = html_escape::decode_html_entities(&current_text_content).trim().to_string();
+                    let text = html_escape::decode_html_entities(&current_text_content)
+                        .trim()
+                        .to_string();
                     if !text.is_empty() {
                         let start = current_text_start.unwrap_or(0.0);
                         let dur = current_text_dur.unwrap_or(0.0);
@@ -205,9 +214,16 @@ pub fn timed_lines(payload: &CaptionPayload) -> String {
     };
     out.push_str(&format!("# {title}\n"));
     out.push_str(&format!("Channel: {}\n", payload.metadata.channel));
-    out.push_str(&format!("Duration: {}\n", payload.metadata.duration_formatted));
+    out.push_str(&format!(
+        "Duration: {}\n",
+        payload.metadata.duration_formatted
+    ));
     out.push_str(&format!("URL: {}\n", payload.url));
-    let cap_kind = if payload.auto_generated { "auto-generated" } else { "human" };
+    let cap_kind = if payload.auto_generated {
+        "auto-generated"
+    } else {
+        "human"
+    };
     out.push_str(&format!("Captions: {cap_kind}\n\n---\n\n"));
 
     for seg in &payload.segments {
@@ -225,7 +241,10 @@ pub fn plain_lines(payload: &CaptionPayload) -> String {
     };
     out.push_str(&format!("# {title}\n"));
     out.push_str(&format!("Channel: {}\n", payload.metadata.channel));
-    out.push_str(&format!("Duration: {}\n", payload.metadata.duration_formatted));
+    out.push_str(&format!(
+        "Duration: {}\n",
+        payload.metadata.duration_formatted
+    ));
     out.push_str(&format!("URL: {}\n\n---\n\n", payload.url));
 
     for seg in &payload.segments {
@@ -263,19 +282,48 @@ fn ytdlp_metadata(video_id: &str) -> Option<Metadata> {
     let val: serde_json::Value = serde_json::from_slice(&output.stdout).ok()?;
     let duration = val.get("duration").and_then(|v| v.as_i64()).unwrap_or(0);
     Some(Metadata {
-        title: val.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-        channel: val.get("channel").or_else(|| val.get("uploader")).and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+        title: val
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        channel: val
+            .get("channel")
+            .or_else(|| val.get("uploader"))
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
         duration,
-        duration_formatted: if duration > 0 { format_timestamp(duration as f64) } else { String::new() },
-        published: val.get("upload_date").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+        duration_formatted: if duration > 0 {
+            format_timestamp(duration as f64)
+        } else {
+            String::new()
+        },
+        published: val
+            .get("upload_date")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
         view_count: val.get("view_count").and_then(|v| v.as_i64()).unwrap_or(0),
         is_live: val.get("is_live").and_then(|v| v.as_bool()),
-        chapters: val.get("chapters").and_then(|v| v.as_array()).cloned().unwrap_or_default(),
-        language: val.get("language").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+        chapters: val
+            .get("chapters")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default(),
+        language: val
+            .get("language")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
     })
 }
 
-pub fn fetch_captions(client: &reqwest::blocking::Client, url_or_id: &str, language: &str) -> Result<CaptionPayload, String> {
+pub fn fetch_captions(
+    client: &reqwest::blocking::Client,
+    url_or_id: &str,
+    language: &str,
+) -> Result<CaptionPayload, String> {
     let video_id = parse_video_id(url_or_id)?;
 
     // 1. Fetch watch page
@@ -287,7 +335,9 @@ pub fn fetch_captions(client: &reqwest::blocking::Client, url_or_id: &str, langu
         .send()
         .map_err(|e| format!("Network error for {watch_url}: {e}"))?;
 
-    let html = watch_resp.text().map_err(|e| format!("Failed to read watch page: {e}"))?;
+    let html = watch_resp
+        .text()
+        .map_err(|e| format!("Failed to read watch page: {e}"))?;
     let api_key = API_KEY_RE
         .captures(&html)
         .and_then(|c| c.get(1))
@@ -314,7 +364,9 @@ pub fn fetch_captions(client: &reqwest::blocking::Client, url_or_id: &str, langu
         .send()
         .map_err(|e| format!("Failed to post to innertube: {e}"))?;
 
-    let player: serde_json::Value = player_resp.json().map_err(|e| format!("Failed to parse player JSON: {e}"))?;
+    let player: serde_json::Value = player_resp
+        .json()
+        .map_err(|e| format!("Failed to parse player JSON: {e}"))?;
 
     let tracks = player
         .pointer("/captions/playerCaptionsTracklistRenderer/captionTracks")
@@ -366,32 +418,75 @@ pub fn fetch_captions(client: &reqwest::blocking::Client, url_or_id: &str, langu
 
     let metadata = ytdlp_metadata(&video_id).unwrap_or_else(|| {
         let details = player.get("videoDetails").cloned().unwrap_or_default();
-        let micro = player.pointer("/microformat/playerMicroformatRenderer").cloned().unwrap_or_default();
-        let duration = details.get("lengthSeconds").and_then(|v| v.as_str()).and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
-        let published = micro.get("publishDate").or_else(|| micro.get("uploadDate")).and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let micro = player
+            .pointer("/microformat/playerMicroformatRenderer")
+            .cloned()
+            .unwrap_or_default();
+        let duration = details
+            .get("lengthSeconds")
+            .and_then(|v| v.as_str())
+            .and_then(|s| s.parse::<i64>().ok())
+            .unwrap_or(0);
+        let published = micro
+            .get("publishDate")
+            .or_else(|| micro.get("uploadDate"))
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
 
         Metadata {
-            title: details.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-            channel: details.get("author").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+            title: details
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            channel: details
+                .get("author")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
             duration,
-            duration_formatted: if duration > 0 { format_timestamp(duration as f64) } else { String::new() },
+            duration_formatted: if duration > 0 {
+                format_timestamp(duration as f64)
+            } else {
+                String::new()
+            },
             published,
-            view_count: details.get("viewCount").and_then(|v| v.as_str()).and_then(|s| s.parse::<i64>().ok()).unwrap_or(0),
-            is_live: details.get("isLiveContent").and_then(|v| v.as_bool()),
+            view_count: details
+                .get("viewCount")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(0),
+            is_live: Some(
+                details
+                    .get("isLiveContent")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
+            ),
             chapters: Vec::new(),
-            language: language.to_string(),
+            language: String::new(),
         }
     });
 
-    let kind = track.get("kind").and_then(|v| v.as_str()).unwrap_or_default();
-    let vss_id = track.get("vssId").and_then(|v| v.as_str()).unwrap_or_default();
+    let kind = track
+        .get("kind")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let vss_id = track
+        .get("vssId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let auto_generated = kind == "asr" || vss_id.contains("asr");
 
     let total = segments.len();
     Ok(CaptionPayload {
         video_id: video_id.clone(),
         url: format!("https://www.youtube.com/watch?v={video_id}"),
-        language: track.get("languageCode").and_then(|v| v.as_str()).unwrap_or(language).to_string(),
+        language: track
+            .get("languageCode")
+            .and_then(|v| v.as_str())
+            .unwrap_or(language)
+            .to_string(),
         auto_generated,
         metadata,
         segments,
@@ -439,36 +534,103 @@ mod tests {
     #[test]
     fn test_flat_android_cues() {
         let segs = parse_timedtext(FLAT);
-        assert_eq!(segs.len(), 1);
-        assert_eq!(segs[0].text, "Hello world");
-        assert_eq!(segs[0].start, 1.0);
-        assert_eq!(segs[0].duration, 2.0);
+        assert_eq!(
+            segs,
+            vec![Segment {
+                start: 1.0,
+                duration: 2.0,
+                text: "Hello world".to_string(),
+            }]
+        );
     }
 
     #[test]
-    fn test_srv1_cues() {
+    fn test_srv1_text_nodes() {
         let segs = parse_timedtext(SRV1);
-        let texts: Vec<&str> = segs.iter().map(|s| s.text.as_str()).collect();
-        assert_eq!(texts, vec!["First cue", "Second cue"]);
-        assert_eq!(segs[0].start, 1.5);
-        assert_eq!(segs[0].duration, 2.0);
-        assert_eq!(segs[1].start, 4.0);
-        assert_eq!(segs[1].duration, 1.0);
+        assert_eq!(
+            segs,
+            vec![
+                Segment {
+                    start: 1.5,
+                    duration: 2.0,
+                    text: "First cue".to_string(),
+                },
+                Segment {
+                    start: 4.0,
+                    duration: 1.0,
+                    text: "Second cue".to_string(),
+                },
+            ]
+        );
     }
 
     #[test]
-    fn test_parse_video_id() {
-        assert_eq!(parse_video_id("dQw4w9WgXcQ").unwrap(), "dQw4w9WgXcQ");
-        assert_eq!(parse_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ").unwrap(), "dQw4w9WgXcQ");
-        assert_eq!(parse_video_id("https://youtu.be/dQw4w9WgXcQ").unwrap(), "dQw4w9WgXcQ");
-        assert_eq!(parse_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ").unwrap(), "dQw4w9WgXcQ");
+    fn test_html_entity_unescaping() {
+        let xml = r#"<?xml version="1.0" encoding="utf-8" ?>
+<timedtext><body><p t="500" d="1000">It&amp;#39;s &amp;quot;live&amp;quot; &amp; ready</p></body></timedtext>"#;
+        let segs = parse_timedtext(xml);
+        assert_eq!(segs.len(), 1);
+        assert_eq!(segs[0].text, "It's \"live\" & ready");
     }
 
     #[test]
-    fn test_format_timestamp() {
+    fn test_video_ids() {
+        let vid = "AdH49hw_BnA";
+        assert_eq!(parse_video_id(vid).unwrap(), vid);
+        assert_eq!(
+            parse_video_id(&format!("https://youtu.be/{vid}?si=abc")).unwrap(),
+            vid
+        );
+        assert_eq!(
+            parse_video_id(&format!("https://www.youtube.com/watch?v={vid}&t=12")).unwrap(),
+            vid
+        );
+        assert_eq!(
+            parse_video_id(&format!("https://www.youtube.com/embed/{vid}")).unwrap(),
+            vid
+        );
+        assert_eq!(
+            parse_video_id(&format!("https://www.youtube.com/shorts/{vid}")).unwrap(),
+            vid
+        );
+        assert!(parse_video_id("https://example.com/not-youtube").is_err());
+    }
+
+    #[test]
+    fn test_timestamp_and_timed_export() {
         assert_eq!(format_timestamp(0.0), "0:00");
+        assert_eq!(format_timestamp(5.0), "0:05");
         assert_eq!(format_timestamp(45.0), "0:45");
         assert_eq!(format_timestamp(65.0), "1:05");
-        assert_eq!(format_timestamp(3665.0), "1:01:05");
+        assert_eq!(format_timestamp(3723.0), "1:02:03");
+
+        let payload = CaptionPayload {
+            video_id: "AdH49hw_BnA".to_string(),
+            url: "https://www.youtube.com/watch?v=AdH49hw_BnA".to_string(),
+            language: "en".to_string(),
+            auto_generated: true,
+            metadata: Metadata {
+                title: "Demo".to_string(),
+                channel: "Moosh".to_string(),
+                duration: 5,
+                duration_formatted: "0:05".to_string(),
+                ..Default::default()
+            },
+            segments: vec![Segment {
+                start: 1.2,
+                duration: 2.0,
+                text: "Hello there".to_string(),
+            }],
+            total_segments: 1,
+        };
+
+        let timed = timed_lines(&payload);
+        assert!(timed.contains("[0:01] Hello there"));
+        assert!(timed.contains("Captions: auto-generated"));
+
+        let plain = plain_lines(&payload);
+        assert!(plain.contains("# Demo\n"));
+        assert!(plain.contains("Hello there\n"));
+        assert!(!plain.contains("[0:01]"));
     }
 }
